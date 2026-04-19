@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+  pasien    Pasien?
+}
+
+model Pasien {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @unique
+  namaLengkap String
+  nik         String    @unique
+  noBpjs      String?
+  dokumenKtp  String?
+  dokumenBpjs String?
+  alamat      String?
+  antreans    Antrean[]
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Antrean {
+  id         Int           @id @default(autoincrement())
+  pasienId   Int
+  tanggal    DateTime      @db.Date
+  noAntrean  Int
+  status     StatusAntrean @default(MENUNGGU)
+  pasien     Pasien        @relation(fields: [pasienId], references: [id], onDelete: Cascade)
+  rekamMedis RekamMedis?
+  tagihan    Tagihan?
+}
+
+model RekamMedis {
+  id        Int     @id @default(autoincrement())
+  antreanId Int     @unique
+  keluhan   String
+  diagnosa  String?
+  lab       Lab[]
+  antrean   Antrean @relation(fields: [antreanId], references: [id], onDelete: Cascade)
+  resep     Resep[]
+}
+
+model Lab {
+  id           Int        @id @default(autoincrement())
+  rekamMedisId Int
+  jenisTes     String
+  hasilLab     String?
+  status       StatusLab  @default(MENUNGGU)
+  rekamMedis   RekamMedis @relation(fields: [rekamMedisId], references: [id], onDelete: Cascade)
+}
+
+model Resep {
+  id           Int         @id @default(autoincrement())
+  rekamMedisId Int
+  rincianObat  String
+  status       StatusResep @default(MENUNGGU)
+  rekamMedis   RekamMedis  @relation(fields: [rekamMedisId], references: [id], onDelete: Cascade)
+}
+
+model Tagihan {
+  id         Int           @id @default(autoincrement())
+  antreanId  Int           @unique
+  totalBiaya Decimal       @db.Decimal(15, 2)
+  status     StatusTagihan @default(BELUM_DIBAYAR)
+  klaimBpjs  KlaimBpjs[]
+  antrean    Antrean       @relation(fields: [antreanId], references: [id], onDelete: Cascade)
+}
+
+model KlaimBpjs {
+  id        Int         @id @default(autoincrement())
+  tagihanId Int
+  status    StatusKlaim @default(MENUNGGU)
+  tagihan   Tagihan     @relation(fields: [tagihanId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  PASIEN
+  DOKTER
+  APOTEKER
+  LAB
+  BPJS
+  MANAJEMEN
+}
+
+enum StatusAntrean {
+  MENUNGGU
+  DIPERIKSA
+  SELESAI
+}
+
+enum StatusLab {
+  MENUNGGU
+  SELESAI
+}
+
+enum StatusResep {
+  MENUNGGU
+  DIAMBIL
+}
+
+enum StatusTagihan {
+  BELUM_DIBAYAR
+  LUNAS
+}
+
+enum StatusKlaim {
+  MENUNGGU
+  DISETUJUI
+  DITOLAK
+}
